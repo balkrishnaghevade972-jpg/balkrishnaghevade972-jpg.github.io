@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mother's Diet Planner</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>💗</text></svg>">
+<style>
+:root{
+  --pink:#c6536b; --pink-dark:#a03b51; --bg:#fff7f8; --card:#fff;
+  --accent:#fff0f3; --text:#3d1f28;
+  --muted:#6b5b63;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:Inter, system-ui, Arial, sans-serif; background:var(--bg);
+  color:var(--text); -webkit-font-smoothing:antialiased;
+}
+.header{
+  padding:14px 18px; display:flex; gap:12px; align-items:center; justify-content:space-between;
+  background: linear-gradient(90deg,#fff7f8, #fffafc);
+  border-bottom:1px solid rgba(0,0,0,0.03);
+}
+.brand { display:flex; gap:12px; align-items:center; }
+.logo { width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--pink),#ff7b9a);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700; }
+.title { font-size:18px; font-weight:700; }
+.controls-right { display:flex; gap:8px; align-items:center; }
+.lang-btn { padding:8px 12px; border:none; border-radius:10px; background:var(--pink); color:#fff; cursor:pointer; }
+.install-btn { padding:8px 12px; border-radius:10px; border:1px solid rgba(0,0,0,0.06); background:transparent; cursor:pointer; }
+
+.container{ max-width:1000px; margin:18px auto; padding:12px; }
+.grid{ display:grid; grid-template-columns:1fr 360px; gap:18px; align-items:start; }
+@media (max-width:920px){ .grid{ grid-template-columns:1fr; } }
+
+.card{ background:var(--card); padding:18px; border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,0.06); }
+.section-title{ font-weight:700; color:var(--pink); margin-bottom:10px; }
+
+.table{ width:100%; border-collapse:collapse; }
+.table th{ padding:10px; background:var(--accent); color:var(--pink-dark); text-align:left; border-radius:6px; }
+.table td{ padding:10px; border-bottom:1px solid #f3e8ea; vertical-align:top; font-size:14px; }
+
+.plan-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.plan-item{ display:flex; justify-content:space-between; gap:12px; background:linear-gradient(90deg,#fff0f3,#fff7f9); padding:12px; border-radius:10px; align-items:center; }
+.plan-time{ font-weight:700; color:#7a2b3b; width:90px; }
+.plan-text{ flex:1; font-size:14px; }
+
+.controls{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.input, select{ padding:10px; border-radius:10px; border:1px solid rgba(0,0,0,0.08); min-width:120px; }
+.primary{ background:var(--pink); color:#fff; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; }
+.ghost{ background:transparent; border:1px solid rgba(0,0,0,0.06); padding:10px 12px; border-radius:10px; cursor:pointer; }
+
+#reminder-popup{
+  position:fixed; right:18px; bottom:18px; width:320px; max-width:92%;
+  background:#fff; border-radius:12px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,0.18);
+  display:none; transform:translateY(20px); opacity:0; z-index:9999;
+  border-left:6px solid var(--pink);
+}
+#reminder-popup.show{ display:block; animation:popin .45s forwards; }
+@keyframes popin { to{ transform:none; opacity:1; } }
+
+.small{ font-size:13px; color:var(--muted); }
+.footer-note{ font-size:12px; color:var(--muted); margin-top:10px; }
+
+.btn-inline{ background:transparent; border: none; color: var(--pink); cursor:pointer; text-decoration:underline; padding:0; font-weight:700; }
+.badge { background:var(--accent); padding:6px 8px; border-radius:8px; color:var(--pink-dark); font-weight:700; display:inline-block; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">
+    <div class="logo">MD</div>
+    <div>
+      <div class="title" id="appTitle">Mother's Diet Planner</div>
+      <div class="small" id="appSubtitle">Daily planner • Reminders • Installable</div>
+    </div>
+  </div>
+
+  <div class="controls-right">
+    <div class="badge" id="langBadge">EN</div>
+    <button class="lang-btn" id="langBtn">🌐 Switch</button>
+    <button class="install-btn" id="installBtn" style="display:none">➕ Install</button>
+  </div>
+</header>
+
+<main class="container">
+  <div class="grid">
+    <!-- LEFT -->
+    <section class="card" id="leftCard">
+      <div class="section-title" id="dietTitle">Diet Specifications</div>
+
+      <table class="table" aria-labelledby="dietTitle">
+        <thead>
+          <tr><th id="stageCol">Stage</th><th id="recoCol">Recommendations</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="beforeTitle"><strong>Before Pregnancy</strong></td>
+            <td id="beforeText">• Folate-rich foods (spinach, legumes)<br>• Whole grains & millets<br>• Nuts, seeds, healthy fats<br>• Protein foods (eggs, chicken, dal)<br>• Balanced calcium & iron</td>
+          </tr>
+          <tr>
+            <td id="duringTitle"><strong>During Pregnancy</strong></td>
+            <td id="duringText">• Add ~350 calories (2nd & 3rd trimester)<br>• Vegetables (300g), fruits (150g)<br>• Pulses (80g), nuts (40g), dairy (400 ml)<br>• Lean meat/fish or plant protein</td>
+          </tr>
+          <tr>
+            <td id="afterTitle"><strong>Postpartum</strong></td>
+            <td id="afterText">• High-protein meals<br>• Iron-rich foods<br>• Hydration (water, soups)<br>• Healthy fats (nuts, ghee)<br>• Small frequent meals for breastfeeding</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="section-title" style="margin-top:16px" id="plannerTitle">Full Daily Diet Planner</div>
+      <div class="small" id="plannerHint">Tap a meal to see details and play the reminder sound.</div>
+
+      <div class="plan-list" id="planList" style="margin-top:12px"></div>
+
+      <div class="controls" style="margin-top:12px">
+        <select id="preset" class="input">
+          <option value="pregnancy">Pregnancy — Balanced</option>
+          <option value="postpartum">Postpartum — Lactation</option>
+          <option value="preconception">Pre-Conception — Preparation</option>
+        </select>
+
+        <label style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="autoRemind"> <span id="autoRemindLabel">Auto reminders</span>
+        </label>
+
+        <select id="intervalSelect" class="input">
+          <option value="120">Reminder every 2 hours</option>
+          <option value="60">Every 1 hour</option>
+          <option value="180">Every 3 hours</option>
+          <option value="custom">Custom (minutes)</option>
+        </select>
+
+        <input id="customInterval" class="input" type="number" min="15" placeholder="minutes" style="display:none; width:130px">
+        <button class="primary" id="applyPreset">Apply Preset</button>
+      </div>
+
+      <div class="footer-note" id="tipNote">Tip: Keep the page open (or install as PWA) for scheduled reminders. For background push (when closed), you will require a push server.</div>
+    </section>
+
+    <!-- RIGHT -->
+    <aside class="card">
+      <div class="section-title" id="quickTitle">Quick Controls</div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label class="small" id="weightLabel">Weight (kg)</label>
+        <input id="weightInput" class="input" type="number" min="30" placeholder="e.g. 58">
+
+        <label class="small" id="pickLangLabel">Pick language</label>
+        <select id="langSelect" class="input">
+          <option value="en">English</option>
+          <option value="mr">मराठी</option>
+        </select>
+
+        <button class="primary" id="saveBtn">Save Settings</button>
+        <button class="ghost" id="showNow">Show Reminder Now</button>
+
+        <div style="height:8px"></div>
+        <div class="small" id="volumeLabel">Sound volume</div>
+        <input type="range" id="volume" min="0" max="1" step="0.05" value="0.8">
+
+        <div style="margin-top:12px" class="small" id="nextLabel">Next reminder in: <span id="nextIn">—</span></div>
+      </div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px solid #f3e8ea">
+      <div class="small" id="notesText"><strong>PWA / Push notes</strong><br>• To receive notifications when the site is closed you will need a push server (I can provide a Node.js example).</div>
+    </aside>
+  </div>
+</main>
+
+<div id="reminder-popup" role="status" aria-live="polite"></div>
+
+<script>
+/* ============================
+   TRANSLATIONS (English + FORMAL Marathi)
+   ============================ */
+let currentLang = 'en';
+
+const translations = {
+  en: {
+    appTitle: "Mother's Diet Planner",
+    appSubtitle: "Daily planner • Reminders • Installable",
+    dietTitle: "Diet Specifications",
+    plannerTitle: "Full Daily Diet Planner",
+    plannerHint: "Tap a meal to see details and play the reminder sound.",
+    autoRemindLabel: "Auto reminders",
+    tipNote: "Tip: Keep the page open (or install as PWA) for scheduled reminders. For background push (when closed), you will require a push server.",
+    quickTitle: "Quick Controls",
+    weightLabel: "Weight (kg)",
+    pickLangLabel: "Pick language",
+    saveBtn: "Save Settings",
+    showNow: "Show Reminder Now",
+    volumeLabel: "Sound volume",
+    nextLabel: "Next reminder in:",
+    notesText: "• To receive notifications when the site is closed you will need a push server (I can provide a Node.js example).",
+    installed: "Installed",
+    not_installed: "Not installed",
+    plannerApplied: "Planner applied",
+    settingsSaved: "Settings saved",
+    meals: {
+      morning: {title: "Morning (Breakfast)", text: "Oats or poha with milk, 1 boiled egg or paneer, fruit."},
+      mid: {title: "Mid-morning", text: "Fruit + handful of nuts or a smoothie."},
+      lunch: {title: "Lunch", text: "Brown rice or roti, dal, mixed vegetables, salad, curd."},
+      evening: {title: "Evening snack", text: "Sprout chaat or roasted chana; buttermilk."},
+      dinner: {title: "Dinner", text: "Roti + vegetable + protein (fish/chicken/dal); light soup."},
+      bedtime: {title: "Before bed", text: "Warm milk with a tsp of ghee (if allowed)."}
+    },
+    reminders: [
+      "Hydrate — drink a glass of water.",
+      "Time for a healthy snack.",
+      "Remember iron-rich foods today.",
+      "Have a fruit for natural energy.",
+      "Include protein in your next meal.",
+      "Take a short walk or stretch."
+    ],
+    dietSpecs: {
+      stage: "Stage",
+      recommendations: "Recommendations",
+      beforeTitle: "Before Pregnancy",
+      duringTitle: "During Pregnancy",
+      afterTitle: "Postpartum",
+      beforeText: "• Folate-rich foods (spinach, legumes)<br>• Whole grains & millets<br>• Nuts, seeds, healthy fats<br>• Protein foods (eggs, chicken, dal)<br>• Balanced calcium & iron",
+      duringText: "• Add ~350 calories (2nd & 3rd trimester)<br>• Vegetables (300g), fruits (150g)<br>• Pulses (80g), nuts (40g), dairy (400 ml)<br>• Lean meat/fish or plant protein",
+      afterText: "• High-protein meals<br>• Iron-rich foods<br>• Hydration (water, soups)<br>• Healthy fats (nuts, ghee)<br>• Small frequent meals for breastfeeding"
+    }
+  },
+
+  mr: {
+    appTitle: "आईंचे आहार नियोजन",
+    appSubtitle: "दैनंदिन योजना • स्मरण • इन्स्टॉल करण्यायोग्य",
+    dietTitle: "आहार मार्गदर्शक",
+    plannerTitle: "दैनंदिन आहार योजना",
+    plannerHint: "एखादा जेवण दाबा — तपशील व स्मरण ध्वनी ऐका.",
+    autoRemindLabel: "स्वयंचलित स्मरणे",
+    tipNote: "टीप: वेळापत्रक स्मरणांसाठी पान उघडे ठेवा किंवा PWA म्हणून इन्स्टॉल करा. पृष्ठ बंद असताना स्मरणांसाठी push सर्व्हर आवश्यक आहे.",
+    quickTitle: "त्वरित नियंत्रणे",
+    weightLabel: "वजन (किलो)",
+    pickLangLabel: "भाषा निवडा",
+    saveBtn: "सेटिंग जतन करा",
+    showNow: "स्मरण दाखवा",
+    volumeLabel: "ध्वनी आवाज",
+    nextLabel: "पुढील स्मरण: ",
+    notesText: "• साइट बंद असताना नोटिफिकेशन्ससाठी push सर्व्हर आवश्यक असतो (Node.js उदाहरण उपलब्ध).",
+    installed: "इन्स्टॉल केले",
+    not_installed: "इन्स्टॉल नाही",
+    plannerApplied: "योजना लागू केली",
+    settingsSaved: "सेटिंग जतन केले",
+    meals: {
+      morning: {title: "सकाळ (नाश्ता)", text: "दूधासह ओट्स/पोहे, १ उकडलेले अंडे किंवा पनीर, फळ."},
+      mid: {title: "मधला नाश्ता", text: "फळ + थोडे सुका मेवा किंवा स्मूदी."},
+      lunch: {title: "दुपारचे जेवण", text: "ब्राउन भात/रोटी, डाळ, मिश्र भाज्या, कोशिंबीर, दही."},
+      evening: {title: "सायंकाळचा नाश्ता", text: "मूगडाळ चाट किंवा भाजलेले चणे; ताक."},
+      dinner: {title: "रात्रीचे जेवण", text: "रोटी + भाज्या + प्रथिने (मासे/चिकन/डाळ); हलका सूप."},
+      bedtime: {title: "झोपण्यापूर्वी", text: "गरम दूध व १ tsp तूप (जर परवानगी असेल तर)."}
+    },
+    reminders: [
+      "पाणी प्या — एक ग्लास पाणी.",
+      "हेल्दी स्नॅक घेण्याची वेळ.",
+      "आज लोहयुक्त पदार्थ लक्षात ठेवा.",
+      "ऊर्जेसाठी फळ खा.",
+      "पुढील जेवणात प्रथिने समाविष्ट करा.",
+      "थोडे चालून किंवा स्ट्रेच करा."
+    ],
+    dietSpecs: {
+      stage: "टप्पा",
+      recommendations: "सूचना",
+      beforeTitle: "गर्भधारणेपूर्वी",
+      duringTitle: "गर्भधारणेदरम्यान",
+      afterTitle: "प्रसूतीनंतर",
+      beforeText: "• फोलेटयुक्त अन्न (पालक, कडधान्ये)<br>• संपूर्ण धान्ये व बाजरी<br>• सुका मेवा, बिया, हेल्दी फॅट्स<br>• प्रथिनयुक्त अन्न (अंडी, चिकन, डाळ)<br>• कॅल्शियम व लोह संतुलित प्रमाणात",
+      duringText: "• दुसऱ्या व तिसऱ्या तिमाहीत ~350 कॅलरीज वाढवा<br>• भाज्या (300g), फळे (150g)<br>• डाळी (80g), सुका मेवा (40g), दुग्ध (400 ml)<br>• मासे/चिकन किंवा वनस्पती-आधारित प्रथिने",
+      afterText: "• प्रथिनयुक्त जेवण<br>• लोहयुक्त अन्न<br>• हायड्रेशन (पाणी, सूप)<br>• हेल्दी फॅट्स (तूप, सुका मेवा)<br>• स्तनपानासाठी छोटे व वारंवार जेवण"
+    }
+  }
+};
+
+/* ============================
+   RENDERING FUNCTIONS
+   ============================ */
+function renderPlanner(){
+  const list = document.getElementById('planList');
+  list.innerHTML = '';
+  const mealOrder = ['morning','mid','lunch','evening','dinner','bedtime'];
+  mealOrder.forEach(key=>{
+    const meal = translations[currentLang].meals[key];
+    const div = document.createElement('div');
+    div.className = 'plan-item';
+    div.innerHTML = `<div class="plan-time">${meal.title}</div>
+                     <div class="plan-text">${meal.text}</div>
+                     <div><button class="ghost" onclick="playMeal('${key}')">${currentLang==='mr' ? '🔔' : '🔔'}</button></div>`;
+    list.appendChild(div);
+  });
+
+  // Update UI text
+  document.getElementById('appTitle').innerText = translations[currentLang].appTitle;
+  document.getElementById('appSubtitle').innerText = translations[currentLang].appSubtitle;
+  document.getElementById('dietTitle').innerText = translations[currentLang].dietTitle;
+  document.getElementById('plannerTitle').innerText = translations[currentLang].plannerTitle;
+  document.getElementById('plannerHint').innerText = translations[currentLang].plannerHint;
+  document.getElementById('autoRemindLabel').innerText = translations[currentLang].autoRemindLabel;
+  document.getElementById('tipNote').innerText = translations[currentLang].tipNote;
+  document.getElementById('quickTitle').innerText = translations[currentLang].quickTitle;
+  document.getElementById('weightLabel').innerText = translations[currentLang].weightLabel;
+  document.getElementById('pickLangLabel').innerText = translations[currentLang].pickLangLabel;
+  document.getElementById('saveBtn').innerText = translations[currentLang].saveBtn;
+  document.getElementById('showNow').innerText = translations[currentLang].showNow;
+  document.getElementById('volumeLabel').innerText = translations[currentLang].volumeLabel;
+  document.getElementById('nextLabel').innerHTML = translations[currentLang].nextLabel + ' <span id="nextIn">—</span>';
+  document.getElementById('notesText').innerText = translations[currentLang].notesText;
+
+  renderDietSpecs();
+}
+
+function renderDietSpecs(){
+  const t = translations[currentLang].dietSpecs;
+  document.getElementById('stageCol').innerText = t.stage;
+  document.getElementById('recoCol').innerText = t.recommendations;
+  document.getElementById('beforeTitle').innerHTML = `<strong>${t.beforeTitle}</strong>`;
+  document.getElementById('duringTitle').innerHTML = `<strong>${t.duringTitle}</strong>`;
+  document.getElementById('afterTitle').innerHTML = `<strong>${t.afterTitle}</strong>`;
+  document.getElementById('beforeText').innerHTML = t.beforeText;
+  document.getElementById('duringText').innerHTML = t.duringText;
+  document.getElementById('afterText').innerHTML = t.afterText;
+}
+
+/* ============================
+   WEB AUDIO (Soft Ding)
+   ============================ */
+let audioCtx, masterGain;
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.connect(audioCtx.destination);
+  const savedVol = parseFloat(localStorage.getItem('md_vol'));
+  masterGain.gain.value = isNaN(savedVol) ? parseFloat(document.getElementById('volume').value) : savedVol;
+}
+function playDing(){
+  try{
+    initAudio();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, audioCtx.currentTime);
+    g.gain.setValueAtTime(0, audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.55);
+    o.connect(g); g.connect(masterGain);
+    o.start(); o.stop(audioCtx.currentTime + 0.55);
+  }catch(e){ console.warn('Audio failed', e); }
+}
+function setVolume(v){
+  if(masterGain) masterGain.gain.value = v;
+  localStorage.setItem('md_vol', v);
+}
+
+/* ============================
+   POPUP & BROWSER NOTIFICATIONS
+   ============================ */
+function getRandomReminder(){
+  const arr = translations[currentLang].reminders;
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+function showPopup(message){
+  const popup = document.getElementById('reminder-popup');
+  popup.textContent = message;
+  popup.classList.add('show');
+  popup.style.display = 'block';
+  playDing();
+
+  // browser notification
+  if('Notification' in window && Notification.permission === 'granted'){
+    if(navigator.serviceWorker && navigator.serviceWorker.controller){
+      navigator.serviceWorker.controller.postMessage({type:'show-notification', body: message});
+    } else {
+      new Notification(translations[currentLang].appTitle, { body: message });
+    }
+  }
+
+  setTimeout(()=>{ popup.classList.remove('show'); popup.style.display='none'; }, 6000);
+}
+
+/* ============================
+   REMINDER SCHEDULER (persistent)
+   ============================ */
+let reminderTimer = null;
+let reminderTimeout = null;
+let reminderIntervalMinutes = 120;
+
+function triggerReminder(){
+  const message = getRandomReminder();
+  showPopup(message);
+  localStorage.setItem('md_lastReminder', Date.now());
+  updateNextCountdown(reminderIntervalMinutes * 60000);
+}
+
+function scheduleRemindersFromState(){
+  // clear existing
+  if(reminderTimer){ clearInterval(reminderTimer); reminderTimer = null; }
+  if(reminderTimeout){ clearTimeout(reminderTimeout); reminderTimeout = null; }
+
+  const auto = (localStorage.getItem('md_auto') === '1');
+  if(!auto) return;
+
+  // interval
+  const savedInterval = parseInt(localStorage.getItem('md_interval')) || 120;
+  reminderIntervalMinutes = savedInterval;
+
+  const lastTs = parseInt(localStorage.getItem('md_lastReminder')) || null;
+  const now = Date.now();
+  const intervalMs = reminderIntervalMinutes * 60000;
+
+  if(!lastTs){
+    // schedule first in full interval
+    reminderTimeout = setTimeout(()=>{
+      triggerReminder();
+      reminderTimer = setInterval(triggerReminder, intervalMs);
+    }, intervalMs);
+    updateNextCountdown(intervalMs);
+    return;
+  }
+
+  const elapsed = now - lastTs;
+  if(elapsed >= intervalMs){
+    // missed while closed -> trigger immediately and start interval
+    triggerReminder();
+    reminderTimer = setInterval(triggerReminder, intervalMs);
+    updateNextCountdown(intervalMs);
+  } else {
+    // schedule remaining
+    const remaining = interva
